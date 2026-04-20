@@ -197,7 +197,7 @@ export default async function AnalysisPage({
       {/* ===== HEADER ===== */}
       <Nav />
       <div style={{ padding: "8px 16px" }}>
-        <Link href="/" style={{ color: "var(--cyan)", fontSize: 13, textDecoration: "none" }}>
+        <Link href="/leaderboard" style={{ color: "var(--cyan)", fontSize: 13, textDecoration: "none" }}>
           &larr; Back to Leaderboard
         </Link>
       </div>

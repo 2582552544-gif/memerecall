@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/", label: "Leaderboard" },
+  { href: "/", label: "Home" },
+  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/watchroom", label: "Watchroom" },
   { href: "/submit", label: "Submit KOL" },
 ];
@@ -15,7 +16,8 @@ export function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const activeHref = navItems.find((item) => {
-    if (item.href === "/" && (pathname === "/" || pathname.startsWith("/analysis"))) return true;
+    if (item.href === "/" && pathname === "/") return true;
+    if (item.href === "/leaderboard" && (pathname === "/leaderboard" || pathname.startsWith("/analysis"))) return true;
     return pathname.startsWith(item.href) && item.href !== "/";
   })?.href || "/";
 
