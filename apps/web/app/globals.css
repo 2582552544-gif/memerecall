@@ -74,6 +74,18 @@ input {
   padding: 0 0 56px;
 }
 
+.leaderboard-guide {
+  margin: 8px 16px 0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(22, 234, 217, 0.06);
+  border: 1px solid rgba(22, 234, 217, 0.15);
+  font-size: 13px;
+  color: var(--muted-2);
+  line-height: 1.6;
+}
+.leaderboard-guide strong { color: var(--cyan); }
+
 .terminal-topbar {
   position: sticky;
   top: 0;

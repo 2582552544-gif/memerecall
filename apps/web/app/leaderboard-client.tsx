@@ -114,10 +114,22 @@ function shortAddress(value: string): string {
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
 }
 
+const scoreBarTips: Record<string, string> = {
+  Authenticity: "Say-do consistency: % of buy/sell claims verified by actual wallet trades",
+  Alpha: "Copy-trade profitability: median ROI if you followed this KOL's verified signals",
+  Coverage: "Data completeness: what % of signal chains are covered by tracked wallets",
+  Discipline: "Risk management: penalized for selling shortly after promoting (pump-dump pattern)",
+};
+
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="score-bar-row">
-      <span className="score-bar-label">{label}</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="score-bar-label" style={{ cursor: "help", borderBottom: "1px dotted var(--muted)" }}>{label}</span>
+        </TooltipTrigger>
+        <TooltipContent>{scoreBarTips[label] || label}</TooltipContent>
+      </Tooltip>
       <div className="score-bar-track">
         <div className="score-bar-fill" style={{ width: scoreBarWidth(value), backgroundColor: scoreBarColor(value) }} />
       </div>
@@ -172,15 +184,26 @@ function QuickCard({ entry }: { entry: LeaderboardEntry }) {
       </div>
       {isWhale ? (
         <div className="qc-metric-highlight">
-          <span className="qc-metric-label">Wallet PnL (7d)</span>
+          <Tooltip>
+            <TooltipTrigger asChild><span className="qc-metric-label" style={{ cursor: "help" }}>Wallet PnL (7d)</span></TooltipTrigger>
+            <TooltipContent>Total realized profit from on-chain trades in the last 7 days. $0 = no realized gains detected in tracked wallets</TooltipContent>
+          </Tooltip>
           <span className={`qc-metric-value ${toneClass(entry.gmgnProfit7d)}`}>{formatUsd(entry.gmgnProfit7d)}</span>
-          <p className="qc-whale-note">Silent Whale. Monitor wallet directly.</p>
+          <p className="qc-whale-note">Silent Whale — profitable on-chain but doesn&apos;t tweet actionable signals. Monitor wallet directly.</p>
         </div>
       ) : (
         <div className="qc-metric-highlight">
-          <span className="qc-metric-label">Follower Alpha (30d median)</span>
+          <Tooltip>
+            <TooltipTrigger asChild><span className="qc-metric-label" style={{ cursor: "help" }}>Follower Alpha (30d median)</span></TooltipTrigger>
+            <TooltipContent>If you had copy-traded every verified signal in the last 30 days, this is your median return. N/A = fewer than 3 verified signals</TooltipContent>
+          </Tooltip>
           <span className={`qc-metric-value ${toneClass(entry.medianROI)}`}>{formatPct(entry.medianROI)}</span>
-          <span className="qc-metric-sub">{entry.verifiedSignals} verified / {entry.signalFrequency} signals</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="qc-metric-sub" style={{ cursor: "help" }}>{entry.verifiedSignals} verified / {entry.signalFrequency} signals</span>
+            </TooltipTrigger>
+            <TooltipContent>Verified = tweet buy/sell claim matched by actual wallet trade. Signals = total buy (S3) + sell (S4) claims in tweets</TooltipContent>
+          </Tooltip>
         </div>
       )}
       <div className="qc-scores">
@@ -242,25 +265,46 @@ export function LeaderboardInteractive({ entries }: { entries: LeaderboardEntry[
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>KOL</th>
+                    <th>
+                      <Tooltip><TooltipTrigger>KOL</TooltipTrigger>
+                      <TooltipContent>Key Opinion Leader — a crypto influencer with Twitter + wallet binding</TooltipContent></Tooltip>
+                    </th>
                     <th>
                       <Tooltip><TooltipTrigger>Score</TooltipTrigger>
-                      <TooltipContent>Composite trust score (0-100)</TooltipContent></Tooltip>
+                      <TooltipContent>Composite trust score (0-100). Weighted: 35% Authenticity + 35% Alpha + 15% Coverage + 15% Discipline</TooltipContent></Tooltip>
                     </th>
-                    <th>Type</th>
+                    <th>
+                      <Tooltip><TooltipTrigger>Type</TooltipTrigger>
+                      <TooltipContent>Signal Caller = tweets + trades. Silent Whale = trades but rarely tweets. Noise Maker = tweets but doesn&apos;t trade what they say</TooltipContent></Tooltip>
+                    </th>
                     <th>
                       <Tooltip><TooltipTrigger>Wallet PnL</TooltipTrigger>
-                      <TooltipContent>7-day realized profit from GMGN</TooltipContent></Tooltip>
+                      <TooltipContent>7-day realized profit from on-chain wallet activity (GMGN data). $0 means no realized profit detected in the tracked wallet</TooltipContent></Tooltip>
                     </th>
                     <th>
                       <Tooltip><TooltipTrigger>Alpha</TooltipTrigger>
-                      <TooltipContent>Median ROI if followers copy-traded</TooltipContent></Tooltip>
+                      <TooltipContent>Median ROI if you had copy-traded every verified signal. N/A = fewer than 3 verified signals (not enough data)</TooltipContent></Tooltip>
                     </th>
-                    <th>Win Rate</th>
-                    <th>Signals</th>
-                    <th>Chain</th>
-                    <th>Action</th>
-                    <th>Flags</th>
+                    <th>
+                      <Tooltip><TooltipTrigger>Win Rate</TooltipTrigger>
+                      <TooltipContent>% of verified signals that were profitable. 0% means no verified trades matched their tweet claims yet</TooltipContent></Tooltip>
+                    </th>
+                    <th>
+                      <Tooltip><TooltipTrigger>Signals</TooltipTrigger>
+                      <TooltipContent>Verified / Total. Verified = tweet claim matched by actual wallet trade. Total = all S3 (buy) + S4 (sell) tweet claims</TooltipContent></Tooltip>
+                    </th>
+                    <th>
+                      <Tooltip><TooltipTrigger>Chain</TooltipTrigger>
+                      <TooltipContent>Blockchains where this KOL has mapped wallets (SOL, ETH, BSC, Base)</TooltipContent></Tooltip>
+                    </th>
+                    <th>
+                      <Tooltip><TooltipTrigger>Action</TooltipTrigger>
+                      <TooltipContent>AUTO COPY = safe to follow. WATCHLIST = verify manually. NARRATIVE = read only. AVOID = suspected pump-dump</TooltipContent></Tooltip>
+                    </th>
+                    <th>
+                      <Tooltip><TooltipTrigger>Flags</TooltipTrigger>
+                      <TooltipContent>Red flags detected: chain mismatch, claimed buys with no trade, quick flips after shilling, celebrity FOMO triggers, etc.</TooltipContent></Tooltip>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

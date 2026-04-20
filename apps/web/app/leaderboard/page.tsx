@@ -73,14 +73,28 @@ export default async function LeaderboardPage() {
   return (
     <main className="terminal-shell">
       <Nav />
+      <div className="leaderboard-guide">
+        <p>
+          <strong>How to read this table:</strong> Each KOL (Key Opinion Leader) is scored by verifying their tweet claims against on-chain wallet trades.
+          Hover any column header for a detailed explanation. Click a row to see the quick profile, or click the handle to view the full analysis report.
+        </p>
+      </div>
       <div className="funnel-stats">
-        <div className="funnel-step"><span className="funnel-num">{lb.discoveredCount}</span><span className="funnel-label">Discovered</span></div>
+        <div className="funnel-step" title="Total KOL wallets scanned across SOL, ETH, BSC, and Base chains">
+          <span className="funnel-num">{lb.discoveredCount}</span><span className="funnel-label">Discovered</span>
+        </div>
         <span className="funnel-arrow">&rarr;</span>
-        <div className="funnel-step"><span className="funnel-num">{lb.prefilterPassedCount}</span><span className="funnel-label">Prefiltered</span></div>
+        <div className="funnel-step" title="Passed 5 rule-based gates: signal frequency, bot check, wallet exists, chain coverage, wallet activity">
+          <span className="funnel-num">{lb.prefilterPassedCount}</span><span className="funnel-label">Prefiltered</span>
+        </div>
         <span className="funnel-arrow">&rarr;</span>
-        <div className="funnel-step"><span className="funnel-num">{lb.analyzedCount}</span><span className="funnel-label">Analyzed</span></div>
+        <div className="funnel-step" title="Full GPT analysis: 100 tweets classified, wallet trades matched, evidence chains built">
+          <span className="funnel-num">{lb.analyzedCount}</span><span className="funnel-label">Analyzed</span>
+        </div>
         <span className="funnel-arrow">&rarr;</span>
-        <div className="funnel-step"><span className="funnel-num">{lb.kolCount}</span><span className="funnel-label">Ranked</span></div>
+        <div className="funnel-step" title="Final ranked KOLs with composite scores and action tiers assigned">
+          <span className="funnel-num">{lb.kolCount}</span><span className="funnel-label">Ranked</span>
+        </div>
         <span className="funnel-arrow" />
         <span className="muted" style={{ marginLeft: "auto", fontSize: 13 }}>Updated {timeAgo(lb.generatedAt)}</span>
       </div>

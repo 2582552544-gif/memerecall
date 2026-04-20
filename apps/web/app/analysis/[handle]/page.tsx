@@ -230,33 +230,65 @@ export default async function AnalysisPage({
 
             {/* 4-dim mini scores */}
             <div className="mini-metric-grid">
-              <div>
-                <span>Authenticity</span>
-                <strong className={scoreColor(report.scores.authenticity)}>{report.scores.authenticity}</strong>
-              </div>
-              <div>
-                <span>Alpha</span>
-                <strong>{report.scores.followerAlpha !== null ? report.scores.followerAlpha : "N/A"}</strong>
-              </div>
-              <div>
-                <span>Coverage</span>
-                <strong className={scoreColor(report.scores.coverage)}>{report.scores.coverage}</strong>
-              </div>
-              <div>
-                <span>Discipline</span>
-                <strong className={scoreColor(report.scores.discipline)}>{report.scores.discipline}</strong>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div style={{ cursor: "help" }}>
+                    <span>Authenticity</span>
+                    <strong className={scoreColor(report.scores.authenticity)}>{report.scores.authenticity}</strong>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Say-do consistency: % of buy/sell claims verified by wallet trades (35% of composite)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div style={{ cursor: "help" }}>
+                    <span>Alpha</span>
+                    <strong>{report.scores.followerAlpha !== null ? report.scores.followerAlpha : "N/A"}</strong>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Copy-trade profitability: median ROI of verified signals. N/A = fewer than 3 verified signals (35% of composite)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div style={{ cursor: "help" }}>
+                    <span>Coverage</span>
+                    <strong className={scoreColor(report.scores.coverage)}>{report.scores.coverage}</strong>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Data completeness: % of signal chains (SOL/ETH/BSC) covered by tracked wallets (15% of composite)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div style={{ cursor: "help" }}>
+                    <span>Discipline</span>
+                    <strong className={scoreColor(report.scores.discipline)}>{report.scores.discipline}</strong>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Risk management: starts at 100, -20 per quick flip after shilling (pump-dump pattern). 15% of composite</TooltipContent>
+              </Tooltip>
             </div>
 
             {/* Signal Funnel */}
             <div className="signal-funnel">
-              <span>{report.signalStats.total} tweets</span>
+              <Tooltip>
+                <TooltipTrigger asChild><span style={{ cursor: "help" }}>{report.signalStats.total} tweets</span></TooltipTrigger>
+                <TooltipContent>Total tweets analyzed from this KOL</TooltipContent>
+              </Tooltip>
               <span className="funnel-arrow">&rarr;</span>
-              <span>{nonNoiseSignals.length} evaluated</span>
+              <Tooltip>
+                <TooltipTrigger asChild><span style={{ cursor: "help" }}>{nonNoiseSignals.length} evaluated</span></TooltipTrigger>
+                <TooltipContent>Non-noise tweets (S1-S4): mentions, opinions, buy claims, sell claims</TooltipContent>
+              </Tooltip>
               <span className="funnel-arrow">&rarr;</span>
-              <span>{s3s4Signals.length} actionable</span>
+              <Tooltip>
+                <TooltipTrigger asChild><span style={{ cursor: "help" }}>{s3s4Signals.length} actionable</span></TooltipTrigger>
+                <TooltipContent>S3 (claimed buy) + S4 (claimed exit) signals that can be verified against wallet</TooltipContent>
+              </Tooltip>
               <span className="funnel-arrow">&rarr;</span>
-              <span>{report.picks.filter((p) => p.matchType !== "none").length} verified</span>
+              <Tooltip>
+                <TooltipTrigger asChild><span style={{ cursor: "help" }}>{report.picks.filter((p) => p.matchType !== "none").length} verified</span></TooltipTrigger>
+                <TooltipContent>Signals matched by actual on-chain wallet trades — the core evidence</TooltipContent>
+              </Tooltip>
             </div>
           </CardContent>
         </Card>
