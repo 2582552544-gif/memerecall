@@ -48,6 +48,9 @@ export interface LeaderboardEntry {
   redFlags: RedFlag[];
   verifiedSignals: number;
   gmgnProfit7d: number;
+  followers: number;
+  wallets: { address: string; chain: string }[];
+  twitterUrl: string;
 }
 
 export interface Leaderboard {

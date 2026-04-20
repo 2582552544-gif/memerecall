@@ -29,6 +29,9 @@ interface LeaderboardEntry {
   redFlags: string[];
   verifiedSignals: number;
   gmgnProfit7d: number;
+  followers?: number;
+  wallets?: { address: string; chain: string }[];
+  twitterUrl?: string;
 }
 
 type KOLArchetype = "signal_caller" | "silent_whale" | "noise_maker";
@@ -67,6 +70,13 @@ function formatPct(v: number | null): string {
   return `${v > 0 ? "+" : ""}${v.toFixed(0)}%`;
 }
 
+function formatFollowers(v: number | undefined): string {
+  if (!v) return "--";
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+  return String(v);
+}
+
 function toneClass(v: number | null): string {
   if (v === null) return "is-neutral";
   return v > 0 ? "is-positive" : v < 0 ? "is-negative" : "is-neutral";
@@ -83,6 +93,13 @@ function scoreBarColor(v: number): string {
   return "#ff6687";
 }
 
+function scoreColorClass(v: number): string {
+  if (v >= 70) return "score-green";
+  if (v >= 40) return "score-yellow";
+  if (v >= 20) return "score-orange";
+  return "score-red";
+}
+
 function chainPill(chain: string): string {
   switch (chain) {
     case "sol": return "chain-sol";
@@ -90,6 +107,11 @@ function chainPill(chain: string): string {
     case "bsc": return "chain-bsc";
     default: return "chain-unknown";
   }
+}
+
+function shortAddress(value: string): string {
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
 }
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -104,10 +126,20 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
   );
 }
 
+/* ---- Twitter icon (inline SVG) ---- */
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
 function QuickCard({ entry }: { entry: LeaderboardEntry }) {
   const archetype = getArchetype(entry);
   const arch = archetypeLabel(archetype);
   const isWhale = archetype === "silent_whale";
+  const twitterUrl = entry.twitterUrl || `https://x.com/${entry.handle}`;
 
   return (
     <div className="quick-card">
@@ -118,6 +150,17 @@ function QuickCard({ entry }: { entry: LeaderboardEntry }) {
         </div>
         <Badge variant={arch.variant}>{arch.label}</Badge>
       </div>
+
+      {/* Twitter + Followers row */}
+      <div className="qc-social-row">
+        <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="qc-twitter-link">
+          <XIcon /> View on X
+        </a>
+        {(entry.followers ?? 0) > 0 && (
+          <span className="qc-followers">{formatFollowers(entry.followers)} followers</span>
+        )}
+      </div>
+
       <div className="qc-hero">
         <div className={`qc-score ${entry.scores.composite >= 60 ? "score-green" : entry.scores.composite >= 40 ? "score-yellow" : "score-red"}`}>
           <span className="qc-score-num">{entry.scores.composite}</span>
@@ -153,11 +196,29 @@ function QuickCard({ entry }: { entry: LeaderboardEntry }) {
           ))}
         </div>
       )}
+
+      {/* Wallets section */}
+      {entry.wallets && entry.wallets.length > 0 && (
+        <div className="qc-wallets">
+          <span className="qc-wallets-label">Wallets</span>
+          {entry.wallets.map((w) => (
+            <div key={w.address} className="qc-wallet-row">
+              <span className={`chain-pill-sm ${chainPill(w.chain)}`}>{w.chain.toUpperCase()}</span>
+              <code className="qc-wallet-addr">{shortAddress(w.address)}</code>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="qc-chains">
         {entry.chains.map((c) => (
           <span key={c} className={`chain-pill-sm ${chainPill(c)}`}>{c.toUpperCase()}</span>
         ))}
       </div>
+
+      <Link href={`/analysis/${entry.handle}`} className="qc-view-full">
+        View Full Analysis &rarr;
+      </Link>
     </div>
   );
 }
@@ -182,6 +243,10 @@ export function LeaderboardInteractive({ entries }: { entries: LeaderboardEntry[
                   <tr>
                     <th>#</th>
                     <th>KOL</th>
+                    <th>
+                      <Tooltip><TooltipTrigger>Score</TooltipTrigger>
+                      <TooltipContent>Composite trust score (0-100)</TooltipContent></Tooltip>
+                    </th>
                     <th>Type</th>
                     <th>
                       <Tooltip><TooltipTrigger>Wallet PnL</TooltipTrigger>
@@ -191,6 +256,7 @@ export function LeaderboardInteractive({ entries }: { entries: LeaderboardEntry[
                       <Tooltip><TooltipTrigger>Alpha</TooltipTrigger>
                       <TooltipContent>Median ROI if followers copy-traded</TooltipContent></Tooltip>
                     </th>
+                    <th>Win Rate</th>
                     <th>Signals</th>
                     <th>Chain</th>
                     <th>Action</th>
@@ -202,6 +268,7 @@ export function LeaderboardInteractive({ entries }: { entries: LeaderboardEntry[
                     const arch = archetypeLabel(getArchetype(entry));
                     const act = actionBadge(entry.action);
                     const isSelected = entry.handle === selected?.handle;
+                    const twitterUrl = entry.twitterUrl || `https://x.com/${entry.handle}`;
                     return (
                       <tr
                         key={entry.handle}
@@ -210,19 +277,31 @@ export function LeaderboardInteractive({ entries }: { entries: LeaderboardEntry[
                       >
                         <td className="rank-cell"><span className="rank-num">{entry.rank}</span></td>
                         <td>
-                          <Link href={`/analysis/${entry.handle}`} className="kol-cell">
+                          <div className="kol-cell">
                             <div className="kol-avatar">{entry.displayName.slice(0, 1).toUpperCase()}</div>
                             <div>
-                              <strong>@{entry.handle}</strong>
-                              <small className="muted">{entry.displayName}</small>
+                              <div className="kol-name-row">
+                                <Link href={`/analysis/${entry.handle}`}>
+                                  <strong>@{entry.handle}</strong>
+                                </Link>
+                                <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="kol-twitter-icon" title="View on X">
+                                  <XIcon />
+                                </a>
+                              </div>
+                              <small className="muted">
+                                {entry.displayName}
+                                {(entry.followers ?? 0) > 0 && <> · {formatFollowers(entry.followers)}</>}
+                              </small>
                             </div>
-                          </Link>
+                          </div>
                         </td>
-                        <td><Badge variant={arch.variant}>{arch.label}</Badge></td>
+                        <td><strong className={scoreColorClass(entry.scores.composite)}>{entry.scores.composite}</strong></td>
+                        <td><Badge variant={arch.variant} className="archetype-badge">{arch.label}</Badge></td>
                         <td className={toneClass(entry.gmgnProfit7d)}><strong>{formatUsd(entry.gmgnProfit7d)}</strong></td>
                         <td className={toneClass(entry.medianROI)}>
                           {entry.medianROI !== null ? <strong>{formatPct(entry.medianROI)}</strong> : <span className="muted">N/A</span>}
                         </td>
+                        <td><strong>{entry.winRate}%</strong></td>
                         <td>{entry.verifiedSignals} / {entry.signalFrequency}</td>
                         <td>
                           {entry.chains.map((c) => (

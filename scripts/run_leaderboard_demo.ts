@@ -1,10 +1,13 @@
 /**
- * MemeRecall v3.0 Leaderboard Demo
+ * MemeRecall v3.0 Leaderboard Engine
  *
  * Full funnel: GMGN Discovery → Prefilter → v2.0 Analysis → Ranking → Leaderboard
+ *
+ * CRUD logic: new entries are upserted into the existing leaderboard.
+ * Old KOLs that weren't in this run are preserved. Re-ranks all entries.
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   discoverKOLs,
@@ -14,6 +17,52 @@ import {
   buildLeaderboard,
 } from "../packages/core/src/index";
 import type { DiscoveredKOL } from "../packages/core/src/leaderboard-types";
+import type { Leaderboard, LeaderboardEntry } from "../packages/core/src/leaderboard-types";
+
+const LEADERBOARD_DIR = path.resolve(process.cwd(), "data", "leaderboard");
+const LEADERBOARD_PATH = path.join(LEADERBOARD_DIR, "latest.json");
+
+/** Load existing leaderboard from disk, or return empty */
+async function loadExisting(): Promise<Leaderboard | null> {
+  try {
+    const raw = await readFile(LEADERBOARD_PATH, "utf8");
+    const data = JSON.parse(raw) as Leaderboard;
+    if (data.entries?.length > 0) return data;
+  } catch { /* first run — no file yet */ }
+  return null;
+}
+
+/** Merge new entries into existing: upsert by handle, re-rank */
+function mergeLeaderboards(existing: Leaderboard | null, fresh: Leaderboard): Leaderboard {
+  // Build map: handle → entry (existing first, then overwrite with fresh)
+  const map = new Map<string, LeaderboardEntry>();
+
+  // Keep all existing entries
+  if (existing) {
+    for (const entry of existing.entries) {
+      map.set(entry.handle, entry);
+    }
+  }
+
+  // Upsert fresh entries (overwrite if same handle)
+  for (const entry of fresh.entries) {
+    map.set(entry.handle, entry);
+  }
+
+  // Re-sort by rankScore descending and re-assign ranks
+  const merged = [...map.values()]
+    .sort((a, b) => b.rankScore - a.rankScore);
+  merged.forEach((entry, i) => { entry.rank = i + 1; });
+
+  return {
+    generatedAt: fresh.generatedAt,
+    kolCount: merged.length,
+    discoveredCount: fresh.discoveredCount,
+    prefilterPassedCount: fresh.prefilterPassedCount,
+    analyzedCount: fresh.analyzedCount,
+    entries: merged,
+  };
+}
 
 async function main(): Promise<void> {
   const limit = Number.parseInt(process.argv[2] || "10", 10);
@@ -22,6 +71,12 @@ async function main(): Promise<void> {
   console.log(`  MemeRecall v3.0 Leaderboard Engine`);
   console.log(`  Discovering ${limit} KOLs from GMGN renowned ranking`);
   console.log(`${"=".repeat(60)}\n`);
+
+  // Load existing leaderboard
+  const existing = await loadExisting();
+  if (existing) {
+    console.log(`  [DB] Loaded ${existing.entries.length} existing KOLs from leaderboard\n`);
+  }
 
   // Step 1: Discovery
   const discovered = await discoverKOLs("sol", limit);
@@ -54,7 +109,10 @@ async function main(): Promise<void> {
   );
 
   if (passedSubjects.length === 0) {
-    console.log("\n  No KOLs passed prefilter. Exiting.");
+    console.log("\n  No KOLs passed prefilter.");
+    if (existing) {
+      console.log(`  Keeping existing ${existing.entries.length} KOLs in leaderboard.\n`);
+    }
     return;
   }
 
@@ -62,21 +120,30 @@ async function main(): Promise<void> {
   console.log(`\n[Step 3/4] Analyzing ${passedSubjects.length} KOLs (v2.0 pipeline, 2 concurrent)...\n`);
   const reports = await batchAnalyzeKols(passedSubjects, 2);
 
-  // Step 4: Ranking
-  console.log(`\n[Step 4/4] Computing RankScore and building leaderboard...\n`);
-  const leaderboard = buildLeaderboard(reports, gmgnMap);
-  leaderboard.discoveredCount = discovered.length;
-  leaderboard.prefilterPassedCount = passedSubjects.length;
+  if (reports.length === 0) {
+    console.log("\n  All analyses failed.");
+    if (existing) {
+      console.log(`  Keeping existing ${existing.entries.length} KOLs in leaderboard.\n`);
+    }
+    return;
+  }
 
-  // Save to file
-  const outDir = path.resolve(process.cwd(), "data", "leaderboard");
-  await mkdir(outDir, { recursive: true });
-  const outputPath = path.join(outDir, "latest.json");
-  await writeFile(outputPath, JSON.stringify(leaderboard, null, 2), "utf8");
+  // Step 4: Ranking + Merge
+  console.log(`\n[Step 4/4] Computing RankScore and merging into leaderboard...\n`);
+  const freshLeaderboard = buildLeaderboard(reports, gmgnMap);
+  freshLeaderboard.discoveredCount = discovered.length;
+  freshLeaderboard.prefilterPassedCount = passedSubjects.length;
+
+  // CRUD: merge fresh into existing
+  const leaderboard = mergeLeaderboards(existing, freshLeaderboard);
+
+  // Save
+  await mkdir(LEADERBOARD_DIR, { recursive: true });
+  await writeFile(LEADERBOARD_PATH, JSON.stringify(leaderboard, null, 2), "utf8");
 
   // Print leaderboard
   console.log(`${"=".repeat(80)}`);
-  console.log(`  LEADERBOARD (${leaderboard.entries.length} KOLs)`);
+  console.log(`  LEADERBOARD (${leaderboard.entries.length} KOLs — ${freshLeaderboard.entries.length} new/updated, ${leaderboard.entries.length - freshLeaderboard.entries.length} preserved)`);
   console.log(`${"=".repeat(80)}`);
   console.log(
     `  ${"#".padStart(3)} | ${"KOL".padEnd(22)} | ${"Tier".padEnd(4)} | ${"Action".padEnd(18)} | ${"Score".padStart(5)} | ${"7d α".padStart(8)} | ${"WR".padStart(4)} | Flags`,
@@ -91,7 +158,7 @@ async function main(): Promise<void> {
     );
   }
 
-  console.log(`\n  Saved to: ${outputPath}`);
+  console.log(`\n  Saved to: ${LEADERBOARD_PATH}`);
   console.log(`  Generated at: ${leaderboard.generatedAt}\n`);
 }
 

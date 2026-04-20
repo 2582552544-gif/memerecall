@@ -495,12 +495,16 @@ export async function analyzeKolFull(
 ): Promise<KOLReport> {
   console.log(`[kol-full] Starting full analysis for @${subject.handle} (${subject.wallets.length} wallets)`);
 
-  // Step 1: Parallel data collection
-  const [tweets, walletReport, activities] = await Promise.all([
+  // Step 1: Parallel data collection (activity is non-fatal)
+  const [tweets, walletReport, activitiesResult] = await Promise.all([
     collectSocialSignalsForHandle(subject.handle, 100),
     analyzeKolMultiWallet(subject.wallets),
-    collectMultiChainActivityRows(subject.wallets, 80),
+    collectMultiChainActivityRows(subject.wallets, 80).catch((err) => {
+      console.warn(`[kol-full] Activity collection failed (non-fatal):`, err instanceof Error ? err.message : err);
+      return [] as Awaited<ReturnType<typeof collectMultiChainActivityRows>>;
+    }),
   ]);
+  const activities = activitiesResult;
 
   console.log(
     `[kol-full] Data collected: ${tweets.length} tweets, ` +

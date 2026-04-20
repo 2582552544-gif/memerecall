@@ -25,6 +25,9 @@ interface Leaderboard {
     redFlags: string[];
     verifiedSignals: number;
     gmgnProfit7d: number;
+    followers?: number;
+    wallets?: { address: string; chain: string }[];
+    twitterUrl?: string;
   }>;
 }
 

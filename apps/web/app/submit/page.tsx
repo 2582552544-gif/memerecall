@@ -18,7 +18,6 @@ function SubmitForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const [lookupResult, setLookupResult] = useState<string>("");
 
-  // Auto-lookup wallet when handle loses focus
   async function handleLookup() {
     const cleanHandle = handle.replace(/^@/, "").trim();
     if (!cleanHandle || walletAddress.trim()) return;
@@ -77,85 +76,57 @@ function SubmitForm() {
     <main className="terminal-shell">
       <Nav />
 
-      <div style={{ maxWidth: 560, margin: "40px auto", padding: "0 20px" }}>
-        <h2 style={{ marginBottom: 8 }}>Analyze a KOL</h2>
-        <p className="muted" style={{ marginBottom: 24 }}>
+      <div className="submit-shell">
+        <h2>Analyze a KOL</h2>
+        <p className="submit-description">
           Enter a Twitter handle to run the full analysis pipeline.
           Wallet address will be auto-detected from GMGN, or you can enter it manually.
         </p>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div>
-            <label style={{ display: "block", marginBottom: 4, fontSize: 13, color: "#999" }}>
-              Twitter Handle
-            </label>
+        <form onSubmit={handleSubmit} className="submit-form">
+          <div className="submit-field">
+            <label htmlFor="submit-handle">Twitter Handle</label>
             <input
+              id="submit-handle"
               type="text"
               value={handle}
               onChange={(e) => setHandle(e.target.value)}
               onBlur={handleLookup}
               placeholder="e.g. thejester"
               required
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                background: "#1a1a2e",
-                border: "1px solid #333",
-                borderRadius: 6,
-                color: "#e0e0e0",
-                fontSize: 15,
-              }}
             />
             {status === "looking-up" && (
-              <small style={{ color: "#7ee6a1", marginTop: 4, display: "block" }}>
+              <small className="lookup-msg lookup-success">
                 Searching GMGN for wallet...
               </small>
             )}
             {lookupResult && status !== "looking-up" && (
-              <small style={{ color: lookupResult.startsWith("Found") ? "#7ee6a1" : "#f5c542", marginTop: 4, display: "block" }}>
+              <small className={`lookup-msg ${lookupResult.startsWith("Found") ? "lookup-success" : "lookup-warning"}`}>
                 {lookupResult}
               </small>
             )}
           </div>
 
-          <div>
-            <label style={{ display: "block", marginBottom: 4, fontSize: 13, color: "#999" }}>
-              Wallet Address <span style={{ color: "#666" }}>(optional — auto-detected from GMGN)</span>
+          <div className="submit-field">
+            <label htmlFor="submit-wallet">
+              Wallet Address <span className="optional-hint">(optional — auto-detected from GMGN)</span>
             </label>
             <input
+              id="submit-wallet"
               type="text"
               value={walletAddress}
               onChange={(e) => setWalletAddress(e.target.value)}
               placeholder="Leave empty to auto-detect, or paste address"
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                background: "#1a1a2e",
-                border: "1px solid #333",
-                borderRadius: 6,
-                color: "#e0e0e0",
-                fontSize: 15,
-                fontFamily: "monospace",
-              }}
+              className="mono"
             />
           </div>
 
-          <div>
-            <label style={{ display: "block", marginBottom: 4, fontSize: 13, color: "#999" }}>
-              Chain
-            </label>
+          <div className="submit-field">
+            <label htmlFor="submit-chain">Chain</label>
             <select
+              id="submit-chain"
               value={chain}
               onChange={(e) => setChain(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                background: "#1a1a2e",
-                border: "1px solid #333",
-                borderRadius: 6,
-                color: "#e0e0e0",
-                fontSize: 15,
-              }}
             >
               <option value="sol">Solana (SOL)</option>
               <option value="eth">Ethereum (ETH)</option>
@@ -167,23 +138,13 @@ function SubmitForm() {
           <button
             type="submit"
             disabled={isLoading}
-            style={{
-              padding: "12px 24px",
-              background: isLoading ? "#555" : "#7ee6a1",
-              color: "#000",
-              border: "none",
-              borderRadius: 6,
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: isLoading ? "wait" : "pointer",
-              marginTop: 8,
-            }}
+            className="submit-btn"
           >
             {status === "analyzing" ? "Analyzing... (this may take 1-2 minutes)" : "Start Analysis"}
           </button>
 
           {status === "error" && (
-            <div style={{ padding: 12, background: "#2a1a1a", border: "1px solid #ff6687", borderRadius: 6, color: "#ff6687", fontSize: 13 }}>
+            <div className="submit-error">
               {errorMsg}
             </div>
           )}

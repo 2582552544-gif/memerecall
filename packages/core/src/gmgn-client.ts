@@ -98,6 +98,9 @@ async function gmgnOpenApiFetch<T>(
   });
 
   const text = await response.text();
+  if (!response.ok || text.trimStart().startsWith("<")) {
+    throw new Error(`GMGN OpenAPI HTTP ${response.status}: ${text.slice(0, 200)}`);
+  }
   const parsed = JSON.parse(text) as { code: number; message?: string; error?: string; data: T };
   if (parsed.code !== 0) {
     throw new Error(`GMGN OpenAPI request failed: ${parsed.message || parsed.error || parsed.code}`);
@@ -105,21 +108,28 @@ async function gmgnOpenApiFetch<T>(
   return parsed.data;
 }
 
+/**
+ * Fetch wallet activity via bb-browser (with login session cookies).
+ * Uses the same page API that profile/holdings use.
+ * Falls back gracefully on failure — returns empty activities.
+ */
 export async function fetchGmgnWalletActivity(
   walletAddress: string,
   chain: string,
   limit = 20,
-  cursor?: string,
 ): Promise<GmgnWalletActivityResponse> {
-  const query: Record<string, string | number> = {
-    chain,
-    wallet_address: walletAddress,
-    limit,
-  };
-  if (cursor) {
-    query.cursor = cursor;
+  const url = `https://gmgn.ai/api/v1/wallet_activity/${chain}?type=buy&type=sell&wallet=${walletAddress}&limit=${limit}`;
+  try {
+    const result = await bbFetchJson<{ code: number; data: GmgnWalletActivityResponse }>(url);
+    if (result.code !== 0 || !result.data) {
+      console.warn(`[gmgn] wallet_activity code=${result.code} for ${walletAddress}`);
+      return { activities: [] } as unknown as GmgnWalletActivityResponse;
+    }
+    return result.data;
+  } catch (err) {
+    console.warn(`[gmgn] wallet_activity failed for ${walletAddress}:`, err instanceof Error ? err.message : err);
+    return { activities: [] } as unknown as GmgnWalletActivityResponse;
   }
-  return gmgnOpenApiFetch<GmgnWalletActivityResponse>("/v1/user/wallet_activity", query);
 }
 
 export async function fetchGmgnTokenInfo(

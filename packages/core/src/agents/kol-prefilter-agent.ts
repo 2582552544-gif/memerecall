@@ -96,7 +96,7 @@ export async function prefilterKOL(
 
   // G1: Tweet signal frequency (THE FIRST GATE)
   const { s3, s4, tokenMentions } = countActionSignals(tweets);
-  gates.G1_signals = (s3 + s4) >= 3 || tokenMentions >= 5;
+  gates.G1_signals = (s3 + s4) >= 1 || tokenMentions >= 2;
   if (!gates.G1_signals) {
     failureReason = "inactive";
     console.log(

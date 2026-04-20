@@ -86,7 +86,7 @@ export async function analyzeKolMultiWallet(
         fetchGmgnWalletProfile(w.address, w.chain),
         fetchGmgnWalletHoldings(w.address, w.chain, 20),
       ]);
-      const decisions = holdingsResponse.code === 0
+      const decisions = holdingsResponse.code === 0 && holdingsResponse.data?.list
         ? holdingsResponse.data.list.map(toDecision)
         : [];
       return {

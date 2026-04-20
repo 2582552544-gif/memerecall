@@ -118,6 +118,12 @@ export function buildLeaderboard(
         redFlags: report.redFlags,
         verifiedSignals,
         gmgnProfit7d: gmgn?.realizedProfit7d || 0,
+        followers: report.kol.followers || 0,
+        wallets: report.walletSummaries.map((w) => ({
+          address: w.address,
+          chain: w.chain,
+        })),
+        twitterUrl: `https://x.com/${report.kol.handle}`,
       };
     })
     .sort((a, b) => b.rankScore - a.rankScore);
