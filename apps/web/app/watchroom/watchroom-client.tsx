@@ -67,7 +67,7 @@ function shortAddress(value: string): string {
 }
 
 function formatPrice(value?: number | null): string {
-  if (!value) return "未采集";
+  if (!value) return "No data";
   if (value >= 1000) return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
   if (value >= 1) return `$${value.toFixed(4)}`;
   if (value >= 0.01) return `$${value.toFixed(4)}`;
@@ -82,8 +82,8 @@ function formatPercent(value: number): string {
 }
 
 function formatTime(value?: string | null): string {
-  if (!value) return "未查看";
-  return new Date(value).toLocaleString("zh-CN", {
+  if (!value) return "Not checked";
+  return new Date(value).toLocaleString("en-US", {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -99,12 +99,12 @@ function metricValue(
 }
 
 function chartSourceLabel(chart?: ChartState): string {
-  if (!chart) return "等待数据";
-  if (chart.loading) return "拉取中";
-  if (chart.error) return "接口错误";
-  if (chart.source === "gmgn_kline") return "GMGN K线";
-  if (chart.source === "local_snapshot") return "本地快照";
-  return "暂无曲线";
+  if (!chart) return "Awaiting data";
+  if (chart.loading) return "Loading";
+  if (chart.error) return "API error";
+  if (chart.source === "gmgn_kline") return "GMGN Kline";
+  if (chart.source === "local_snapshot") return "Local snapshot";
+  return "No chart";
 }
 
 function signalLabelText(value?: WatchToken["signalLabel"]): string {
@@ -190,10 +190,10 @@ export function WatchroomClient() {
         });
         const data = await response.json() as { checked?: number };
         if ((data.checked || 0) > 0) {
-          setMessage(`已自动同步最新价格，共检查 ${data.checked || 0} 个币。`);
+          setMessage(`Synced latest prices. Checked ${data.checked || 0} tokens.`);
         }
       } catch {
-        setMessage("自动同步失败，页面显示的是本地缓存。");
+        setMessage("Auto-sync failed. Showing local cache.");
       }
       await loadTokens();
     })();
@@ -217,7 +217,7 @@ export function WatchroomClient() {
       setMessage("");
       const trimmed = address.trim();
       if (!trimmed) {
-        setMessage("先粘贴一个 token 合约地址。");
+        setMessage("Paste a token contract address first.");
         return;
       }
 
@@ -233,12 +233,12 @@ export function WatchroomClient() {
       });
 
       if (!response.ok) {
-        setMessage("添加失败，检查地址或 API 服务。");
+        setMessage("Failed to add. Check address or API service.");
         return;
       }
 
       setAddress("");
-      setMessage("已加入监控。系统每 30 分钟检查一次，价格变化超过 20% 才通知。");
+      setMessage("Added to watchlist. System checks every 30 min, alerts on >20% price change.");
       await loadTokens();
     });
   }
@@ -250,7 +250,7 @@ export function WatchroomClient() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ id: token.id }),
       });
-      setMessage(`已删除 ${token.symbol || shortAddress(token.address)}。`);
+      setMessage(`Removed ${token.symbol || shortAddress(token.address)}.`);
       setCharts((current) => {
         const next = { ...current };
         delete next[token.id];
@@ -268,7 +268,7 @@ export function WatchroomClient() {
         body: JSON.stringify({ dryRun: true }),
       });
       const data = await response.json() as { checked?: number; alerts?: unknown[] };
-      setMessage(`已手动查看 ${data.checked || 0} 个币，触发 ${data.alerts?.length || 0} 个提醒。`);
+      setMessage(`Manually checked ${data.checked || 0} tokens, triggered ${data.alerts?.length || 0} alerts.`);
       await loadTokens();
       await Promise.all(tokens.map((item) => loadChartForToken(item)));
     });
@@ -285,17 +285,17 @@ export function WatchroomClient() {
       <section className="watchroom-layout">
         <Card className="terminal-panel watchroom-control-panel">
           <CardHeader className="panel-title-row">
-            <CardTitle>选择币</CardTitle>
+            <CardTitle>Add Token</CardTitle>
             <Badge variant="outline">Paste CA</Badge>
           </CardHeader>
           <CardContent>
             <div className="watchroom-guide">
-              <strong>三步走</strong>
-              <span>粘贴合约 → 自动看盘 → 命中 20% 波动才通知。</span>
+              <strong>3 Steps</strong>
+              <span>Paste contract &rarr; Auto-watch &rarr; Alert on &gt;20% move.</span>
             </div>
             <div className="simple-form">
               <label>
-                链
+                Chain
                 <select value={chain} onChange={(event) => setChain(event.target.value as typeof chain)}>
                   <option value="sol">Solana</option>
                   <option value="bsc">BSC</option>
@@ -303,22 +303,22 @@ export function WatchroomClient() {
                 </select>
               </label>
               <label>
-                合约地址
+                Contract Address
                 <input
                   value={address}
                   onChange={(event) => setAddress(event.target.value)}
-                  placeholder="例如 6PPX...pump"
+                  placeholder="e.g. 6PPX...pump"
                 />
               </label>
               <button className="primary-action" onClick={addToken} disabled={isPending}>
-                加入监控
+                Add to Watch
               </button>
               <button className="secondary-action" onClick={runOnce} disabled={isPending}>
-                现在看一次
+                Check Now
               </button>
             </div>
             <p className="helper-text">
-              页面打开会先同步最新价格。曲线优先用 GMGN K 线，GMGN 没返回蜡烛时使用本地价格快照。
+              Prices sync on page load. Charts use GMGN kline data when available, falling back to local snapshots.
             </p>
             {message ? <p className="watch-message">{message}</p> : null}
           </CardContent>
@@ -326,7 +326,7 @@ export function WatchroomClient() {
 
         <Card className="terminal-panel watchroom-table-panel">
           <CardHeader className="panel-title-row">
-            <CardTitle>监控列表</CardTitle>
+            <CardTitle>Watch List</CardTitle>
             <div className="panel-badges">
               <Badge>{tokens.length} tokens</Badge>
               <Badge variant="outline">{validCharts} charts</Badge>
@@ -335,7 +335,7 @@ export function WatchroomClient() {
           <CardContent>
             <div className="watch-list">
               {tokens.length === 0 ? (
-                <div className="empty-state">还没有币。先在左边粘贴一个合约地址。</div>
+                <div className="empty-state">No tokens yet. Paste a contract address on the left to start.</div>
               ) : tokens.map((token) => (
                 <div
                   className={`watch-row ${selectedTokenId === token.id ? "watch-row-active" : ""}`}
@@ -353,31 +353,31 @@ export function WatchroomClient() {
                     {charts[token.id]?.points?.length ? (
                       <MiniSparkline points={charts[token.id].points} />
                     ) : charts[token.id]?.loading ? (
-                      <span className="chart-state">拉取中</span>
+                      <span className="chart-state">Loading</span>
                     ) : charts[token.id]?.error ? (
-                      <span className="chart-state chart-state-danger">接口错误</span>
+                      <span className="chart-state chart-state-danger">API error</span>
                     ) : (
-                      <span className="chart-state">暂无曲线</span>
+                      <span className="chart-state">No chart</span>
                     )}
                   </div>
                   <div>
-                    <span>当前价</span>
+                    <span>Price</span>
                     <strong className="watch-value watch-value-price">{formatPrice(token.lastSnapshotPrice)}</strong>
                   </div>
                   <div>
-                    <span>阈值</span>
+                    <span>Threshold</span>
                     <strong className="watch-value">{token.thresholdPct}%</strong>
                   </div>
                   <div>
-                    <span>上次查看</span>
+                    <span>Last Check</span>
                     <strong className="watch-value">{formatTime(token.lastSnapshotAt)}</strong>
                   </div>
                   <div>
-                    <span>上次通知</span>
-                    <strong className="watch-value">{token.lastNotifyAt ? formatTime(token.lastNotifyAt) : "无"}</strong>
+                    <span>Last Alert</span>
+                    <strong className="watch-value">{token.lastNotifyAt ? formatTime(token.lastNotifyAt) : "None"}</strong>
                   </div>
                   <div>
-                    <span>数据源</span>
+                    <span>Source</span>
                     <strong className="watch-value">{chartSourceLabel(charts[token.id])}</strong>
                   </div>
                   <div>
@@ -390,14 +390,14 @@ export function WatchroomClient() {
                   </div>
                   <button
                     className="watch-row-delete"
-                    aria-label={`删除 ${token.symbol || shortAddress(token.address)}`}
+                    aria-label={`Remove ${token.symbol || shortAddress(token.address)}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       deleteToken(token);
                     }}
                     disabled={isPending}
                   >
-                    <span>删除</span>
+                    <span>Remove</span>
                   </button>
                 </div>
               ))}
@@ -407,7 +407,7 @@ export function WatchroomClient() {
 
         <Card className="terminal-panel watchroom-chart-panel">
           <CardHeader className="panel-title-row">
-            <CardTitle>曲线图</CardTitle>
+            <CardTitle>Chart</CardTitle>
             <Badge variant={selectedChart?.source === "gmgn_kline" ? "default" : "outline"}>
               {chartSourceLabel(selectedChart)}
             </Badge>
@@ -415,17 +415,17 @@ export function WatchroomClient() {
           <CardContent>
             {(() => {
               if (!selected) {
-                return <div className="empty-state">先添加一个币，系统会自动同步价格并尝试绘制曲线。</div>;
+                return <div className="empty-state">Add a token first. Prices will sync automatically and charts will appear.</div>;
               }
               const chart = selectedChart;
               if (chart?.loading) {
-                return <div className="empty-state">正在拉取 GMGN K 线和本地快照。</div>;
+                return <div className="empty-state">Loading GMGN kline data and local snapshots.</div>;
               }
               if (!chart?.points?.length) {
                 return (
                   <div className="empty-state">
-                    <strong>{selected.symbol || shortAddress(selected.address)} 暂无可画曲线</strong>
-                    <span>{chart?.error || chart?.notes?.[chart.notes.length - 1] || "等待下一次价格快照后会出现趋势线。"}</span>
+                    <strong>{selected.symbol || shortAddress(selected.address)} — No chart data</strong>
+                    <span>{chart?.error || chart?.notes?.[chart.notes.length - 1] || "Trend line will appear after the next price snapshot."}</span>
                   </div>
                 );
               }

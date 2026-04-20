@@ -196,6 +196,11 @@ export default async function AnalysisPage({
     <main className="terminal-shell">
       {/* ===== HEADER ===== */}
       <Nav />
+      <div style={{ padding: "8px 16px" }}>
+        <Link href="/" style={{ color: "var(--cyan)", fontSize: 13, textDecoration: "none" }}>
+          &larr; Back to Leaderboard
+        </Link>
+      </div>
 
       {/* ===== TIER 1: HERO SUMMARY CARD ===== */}
       <TooltipProvider>
@@ -549,23 +554,24 @@ export default async function AnalysisPage({
           {report.evidences && report.evidences.length > 0 && (
             <TabsContent value="evidence">
               <CardContent>
-                {/* Simulator + Breakdown side by side */}
-                {(report.followerSim || report.pnlBreakdown) && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-                    {report.followerSim && (
-                      <FollowerSimulator handle={report.kol.handle} sim={report.followerSim} />
-                    )}
-                    {report.pnlBreakdown && (
-                      <WalletPnlBreakdown breakdown={report.pnlBreakdown} />
-                    )}
-                  </div>
-                )}
                 <EvidenceList evidences={report.evidences} />
               </CardContent>
             </TabsContent>
           )}
         </Tabs>
       </Card>
+
+      {/* ===== TIER 2.5: SIMULATOR + PNL BREAKDOWN ===== */}
+      {(report.followerSim || report.pnlBreakdown) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {report.followerSim && (
+            <FollowerSimulator handle={report.kol.handle} sim={report.followerSim} />
+          )}
+          {report.pnlBreakdown && (
+            <WalletPnlBreakdown breakdown={report.pnlBreakdown} />
+          )}
+        </div>
+      )}
 
       {/* ===== TIER 3: DEEP REPORT (charts) ===== */}
       {profitPoints.length > 0 && (

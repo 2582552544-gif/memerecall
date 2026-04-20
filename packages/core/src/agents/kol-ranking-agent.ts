@@ -126,7 +126,7 @@ export function buildLeaderboard(
         twitterUrl: `https://x.com/${report.kol.handle}`,
       };
     })
-    .sort((a, b) => b.rankScore - a.rankScore);
+    .sort((a, b) => b.scores.composite - a.scores.composite || b.rankScore - a.rankScore);
 
   // Assign ranks
   entries.forEach((entry, i) => {

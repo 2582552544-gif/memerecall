@@ -1,7 +1,7 @@
 /**
  * GPT-driven Narrative Agent
  *
- * Generates 3 top insights + thesis in Chinese based on structured analysis data.
+ * Generates 3 top insights + thesis in English based on structured analysis data.
  */
 
 import type { KOLScores, RedFlag, SignalStats, ChainCoverage } from "../kol-report-types";
@@ -30,26 +30,26 @@ export async function generateNarrative(
   const client = getLLMClient();
   const model = getLLMModel();
 
-  const prompt = `你是加密 KOL 分析师。基于以下结构化数据，生成中文分析报告。
+  const prompt = `You are a crypto KOL analyst. Based on the structured data below, generate an English analysis report.
 
-## 数据
+## Data
 - KOL: @${input.handle}
-- 综合评分: ${input.scores.composite}/100
-- 真实性: ${input.scores.authenticity}/100
-- 跟单Alpha: ${input.scores.followerAlpha === null ? "数据不足" : input.scores.followerAlpha}
-- 链覆盖: ${input.scores.coverage}/100
-- 风控纪律: ${input.scores.discipline}/100
-- 红旗: ${input.redFlags.join(", ") || "无"}
-- 信号分布: S0=${input.signalStats.s0} S1=${input.signalStats.s1} S2=${input.signalStats.s2} S3=${input.signalStats.s3} S4=${input.signalStats.s4}
-- 链覆盖: 信号链 ${JSON.stringify(input.chainCoverage.signalChains)}, 钱包链 ${JSON.stringify(input.chainCoverage.walletChains)}, 缺失 ${input.chainCoverage.missingChains.join(",")}
-- 匹配成功: ${input.matchedCount}, 喊单未买: ${input.claimNoTradeCount}, 钱包独立交易: ${input.walletOnlyCount}
-- 关键交易: ${input.topTradesSummary}
+- Composite Score: ${input.scores.composite}/100
+- Authenticity: ${input.scores.authenticity}/100
+- Follower Alpha: ${input.scores.followerAlpha === null ? "Insufficient data" : input.scores.followerAlpha}
+- Coverage: ${input.scores.coverage}/100
+- Discipline: ${input.scores.discipline}/100
+- Red Flags: ${input.redFlags.join(", ") || "None"}
+- Signal Distribution: S0=${input.signalStats.s0} S1=${input.signalStats.s1} S2=${input.signalStats.s2} S3=${input.signalStats.s3} S4=${input.signalStats.s4}
+- Chain Coverage: Signal chains ${JSON.stringify(input.chainCoverage.signalChains)}, Wallet chains ${JSON.stringify(input.chainCoverage.walletChains)}, Missing ${input.chainCoverage.missingChains.join(",") || "none"}
+- Matched: ${input.matchedCount}, Claimed but no trade: ${input.claimNoTradeCount}, Wallet-only trades: ${input.walletOnlyCount}
+- Key trades: ${input.topTradesSummary}
 
-## 输出要求
-返回 JSON（不要 markdown 代码块）：
+## Output Requirements
+Return JSON (no markdown code blocks):
 {
-  "insights": ["洞察1 (30-50字)", "洞察2", "洞察3"],
-  "thesis": "100-200字总结，专业直接，提供可执行建议。数据覆盖不完整时必须说明是覆盖缺口，不是欺诈证明。"
+  "insights": ["Insight 1 (1-2 sentences)", "Insight 2", "Insight 3"],
+  "thesis": "3-5 sentence summary. Be professional and direct with actionable advice. When data coverage is incomplete, state it is a coverage gap, not proof of fraud."
 }`;
 
   try {
@@ -66,24 +66,24 @@ export async function generateNarrative(
 
     return {
       insights: [
-        parsed.insights[0] || "数据分析中",
-        parsed.insights[1] || "需要更多数据",
-        parsed.insights[2] || "建议补充钱包映射",
+        parsed.insights[0] || "Analysis in progress",
+        parsed.insights[1] || "More data needed",
+        parsed.insights[2] || "Recommend adding wallet mappings",
       ],
-      thesis: parsed.thesis || "分析数据不足，建议补充更多钱包映射后重新评估。",
+      thesis: parsed.thesis || "Insufficient analysis data. Recommend adding more wallet mappings and re-evaluating.",
     };
   } catch (error) {
     console.error("[narrative-agent] LLM call failed, using fallback:", error);
     return {
       insights: [
-        `综合评分 ${input.scores.composite}/100，真实性 ${input.scores.authenticity}/100`,
-        `${input.redFlags.length} 个红旗：${input.redFlags.slice(0, 3).join("、")}`,
-        `链覆盖缺失：${input.chainCoverage.missingChains.join("、") || "无"}`,
+        `Composite score ${input.scores.composite}/100, Authenticity ${input.scores.authenticity}/100`,
+        `${input.redFlags.length} red flag(s): ${input.redFlags.slice(0, 3).join(", ") || "None"}`,
+        `Missing chain coverage: ${input.chainCoverage.missingChains.join(", ") || "None"}`,
       ],
-      thesis: `@${input.handle} 当前评分 ${input.scores.composite}/100。${
+      thesis: `@${input.handle} currently scores ${input.scores.composite}/100. ${
         input.redFlags.includes("CHAIN_MISMATCH")
-          ? "推文信号链与钱包链不匹配，需补充对应链钱包后重评。"
-          : "综合分析完成，请参考四维评分和红旗标记做出决策。"
+          ? "Signal chains do not match wallet chains. Add corresponding chain wallets and re-evaluate."
+          : "Analysis complete. Refer to the 4-dimension scores and red flags for decision-making."
       }`,
     };
   }
