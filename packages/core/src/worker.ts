@@ -18,7 +18,7 @@ export async function runMemeRecallAnalysisCycle(): Promise<AnalysisCycleResult>
   const config = getMemeRecallConfig();
   const processed: AnalysisCycleResult["processed"] = [];
 
-  await Promise.all(
+  const results = await Promise.allSettled(
     trackedSubjects.map(async (subject) => {
       const report = await analyzeKolByWallet(subject.walletAddress, subject.chain);
       setStoredAnalysisReport(subject.handle, report);
@@ -34,6 +34,12 @@ export async function runMemeRecallAnalysisCycle(): Promise<AnalysisCycleResult>
       });
     }),
   );
+
+  for (const result of results) {
+    if (result.status === "rejected") {
+      console.error("[worker] Analysis failed:", result.reason instanceof Error ? result.reason.message : result.reason);
+    }
+  }
 
   return {
     generatedAt: new Date().toISOString(),

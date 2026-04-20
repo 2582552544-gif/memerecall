@@ -163,8 +163,13 @@ export async function batchPrefilter(
     while (cursor < queue.length) {
       const idx = cursor++;
       const { subject, index } = queue[idx];
-      const gmgnData = gmgnDataMap?.get(subject.handle);
-      results[index] = await prefilterKOL(subject, gmgnData);
+      try {
+        const gmgnData = gmgnDataMap?.get(subject.handle);
+        results[index] = await prefilterKOL(subject, gmgnData);
+      } catch (err) {
+        console.error(`[prefilter] @${subject.handle}: ERROR`, err instanceof Error ? err.message : err);
+        results[index] = { handle: subject.handle, passed: false, gates: {}, failureReason: "inactive" };
+      }
     }
   }
 
