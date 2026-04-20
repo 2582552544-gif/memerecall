@@ -6,31 +6,9 @@
  * into S0-S4 intent levels with position claims and token extraction.
  */
 
-import OpenAI from "openai";
 import type { SocialSignal } from "../social-types";
 import type { ClassifiedSignal, IntentLevel } from "../kol-report-types";
-
-// ---- LLM client (yunwu.ai proxy, OpenAI-compatible) ----
-
-function createLLMClient(): OpenAI {
-  const baseURL = process.env.MEMERECALL_LLM_BASE_URL || "https://yunwu.ai/v1";
-  const apiKey =
-    process.env.MEMERECALL_LLM_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    "";
-
-  if (!apiKey) {
-    throw new Error(
-      "LLM API key required. Set MEMERECALL_LLM_API_KEY or OPENAI_API_KEY env var.",
-    );
-  }
-
-  return new OpenAI({ baseURL, apiKey });
-}
-
-function getModel(): string {
-  return process.env.MEMERECALL_LLM_MODEL || "gpt-4o";
-}
+import { getLLMClient, getLLMModel } from "../llm-client";
 
 // ---- System prompt ----
 
@@ -97,10 +75,10 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 }
 
 async function classifyBatch(
-  client: OpenAI,
-  model: string,
   tweets: TweetInput[],
 ): Promise<ClassifiedSignal[]> {
+  const client = getLLMClient();
+  const model = getLLMModel();
   const userContent = JSON.stringify(
     tweets.map((t) => ({ id: t.id, text: t.text, createdAt: t.createdAt })),
   );
@@ -168,9 +146,6 @@ async function classifyBatch(
 export async function classifySignals(
   tweets: SocialSignal[],
 ): Promise<ClassifiedSignal[]> {
-  const client = createLLMClient();
-  const model = getModel();
-
   const inputs: TweetInput[] = tweets.map((t) => ({
     id: t.id,
     text: t.text,
@@ -180,12 +155,12 @@ export async function classifySignals(
 
   const batches = chunkArray(inputs, 25);
   console.log(
-    `[signal-classifier] Classifying ${inputs.length} tweets in ${batches.length} batch(es) via ${model}`,
+    `[signal-classifier] Classifying ${inputs.length} tweets in ${batches.length} batch(es) via ${getLLMModel()}`,
   );
 
   const results: ClassifiedSignal[] = [];
   for (const batch of batches) {
-    const batchResults = await classifyBatch(client, model, batch);
+    const batchResults = await classifyBatch(batch);
     results.push(...batchResults);
   }
 

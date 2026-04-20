@@ -151,15 +151,28 @@ export async function prefilterKOL(
 export async function batchPrefilter(
   subjects: AgentSubject[],
   gmgnDataMap?: Map<string, DiscoveredKOL>,
+  concurrency = 5,
 ): Promise<PrefilterResult[]> {
-  console.log(`[prefilter] Running Twitter-First gates on ${subjects.length} KOLs...`);
+  console.log(`[prefilter] Running Twitter-First gates on ${subjects.length} KOLs (concurrency=${concurrency})...`);
 
-  const results: PrefilterResult[] = [];
-  for (const subject of subjects) {
-    const gmgnData = gmgnDataMap?.get(subject.handle);
-    const result = await prefilterKOL(subject, gmgnData);
-    results.push(result);
+  const results: PrefilterResult[] = new Array(subjects.length);
+  const queue = subjects.map((s, i) => ({ subject: s, index: i }));
+  let cursor = 0;
+
+  async function worker(): Promise<void> {
+    while (cursor < queue.length) {
+      const idx = cursor++;
+      const { subject, index } = queue[idx];
+      const gmgnData = gmgnDataMap?.get(subject.handle);
+      results[index] = await prefilterKOL(subject, gmgnData);
+    }
   }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, subjects.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
 
   const passed = results.filter((r) => r.passed);
   const failed = results.filter((r) => !r.passed);

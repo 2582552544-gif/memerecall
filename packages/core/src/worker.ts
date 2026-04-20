@@ -18,20 +18,22 @@ export async function runMemeRecallAnalysisCycle(): Promise<AnalysisCycleResult>
   const config = getMemeRecallConfig();
   const processed: AnalysisCycleResult["processed"] = [];
 
-  for (const subject of trackedSubjects) {
-    const report = await analyzeKolByWallet(subject.walletAddress, subject.chain);
-    setStoredAnalysisReport(subject.handle, report);
-    const outputPath = await saveAnalysisReport(
-      config.reportsDir,
-      subject.handle,
-      report,
-    );
-    processed.push({
-      handle: subject.handle,
-      walletAddress: subject.walletAddress,
-      outputPath,
-    });
-  }
+  await Promise.all(
+    trackedSubjects.map(async (subject) => {
+      const report = await analyzeKolByWallet(subject.walletAddress, subject.chain);
+      setStoredAnalysisReport(subject.handle, report);
+      const outputPath = await saveAnalysisReport(
+        config.reportsDir,
+        subject.handle,
+        report,
+      );
+      processed.push({
+        handle: subject.handle,
+        walletAddress: subject.walletAddress,
+        outputPath,
+      });
+    }),
+  );
 
   return {
     generatedAt: new Date().toISOString(),

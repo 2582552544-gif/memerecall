@@ -1,15 +1,19 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import {
   analyzeKolFull,
   findSubjectByHandle,
 } from "@memerecall/core";
-import type { ActionTier, RedFlag, ClassifiedSignal } from "@memerecall/core";
+import type { ActionTier, RedFlag, ClassifiedSignal, KOLReport } from "@memerecall/core";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { ProfitBars, SignalRadar } from "./analysis-charts";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Nav } from "../../components/nav";
 
 // ---- Helpers ----
 
@@ -121,10 +125,53 @@ export default async function AnalysisPage({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
-  const subject = findSubjectByHandle(handle);
-  if (!subject) notFound();
 
-  const report = await analyzeKolFull(subject);
+  // 1. Try loading cached report from data/reports/
+  const normalizedHandle = handle.replace(/^@/, "").trim().toLowerCase();
+  const reportCandidates = [
+    path.resolve(process.cwd(), "data", "reports", `${normalizedHandle}-v2.json`),
+    path.resolve(process.cwd(), "..", "..", "data", "reports", `${normalizedHandle}-v2.json`),
+  ];
+  let report: KOLReport | null = null;
+  for (const filePath of reportCandidates) {
+    try {
+      const raw = await readFile(filePath, "utf8");
+      report = JSON.parse(raw) as KOLReport;
+      break;
+    } catch {
+      continue;
+    }
+  }
+
+  // 2. No cache — try live analysis if handle is in catalog
+  if (!report) {
+    const subject = findSubjectByHandle(handle);
+    if (subject) {
+      report = await analyzeKolFull(subject);
+    }
+  }
+
+  // 3. No data at all — show submit prompt
+  if (!report) {
+    return (
+      <main className="terminal-shell">
+        <Nav />
+        <div style={{ padding: 40, textAlign: "center" }}>
+          <h2>@{handle} not found</h2>
+          <p className="muted" style={{ marginTop: 8 }}>
+            No cached analysis for this KOL. Submit a new analysis request.
+          </p>
+          <Link
+            href={`/submit?handle=${encodeURIComponent(handle)}`}
+            className="action-badge"
+            style={{ display: "inline-block", marginTop: 16, padding: "8px 24px", background: "#7ee6a1", color: "#000", borderRadius: 6, textDecoration: "none", fontWeight: 600 }}
+          >
+            Analyze @{handle}
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   const profitPoints = report.picks
     .filter((p) => p.aggregateProfitUsd !== null)
@@ -145,25 +192,7 @@ export default async function AnalysisPage({
   return (
     <main className="terminal-shell">
       {/* ===== HEADER ===== */}
-      <header className="terminal-topbar">
-        <div className="terminal-brand">
-          <img className="brand-logo" src="/assets/memerecall-logo.svg" alt="MemeRecall" />
-          <span className="brand-name">MemeRecall <small>v2.0</small></span>
-        </div>
-        <nav className="terminal-nav">
-          <span className="nav-item active">KOL Signal Card</span>
-          <span className="nav-item">Watchroom</span>
-        </nav>
-        <div className="terminal-actions">
-          <span className="status-dot" />
-          <span>Agent v{report.agentVersion}</span>
-          {subject.wallets.map((w) => (
-            <span key={w.address} className={`chain-pill ${chainBadgeClass(w.chain)}`}>
-              {w.chain.toUpperCase()}
-            </span>
-          ))}
-        </div>
-      </header>
+      <Nav />
 
       {/* ===== TIER 1: HERO SUMMARY CARD ===== */}
       <TooltipProvider>

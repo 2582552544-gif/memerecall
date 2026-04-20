@@ -15,6 +15,9 @@ export async function setupMemeRecall(): Promise<void> {
   }
 
   if (config.runOnStartup) {
-    await runMemeRecallAnalysisCycle();
+    // Non-blocking: don't hold up API startup
+    runMemeRecallAnalysisCycle().catch((err) => {
+      console.error("[setup] Startup analysis cycle failed:", err instanceof Error ? err.message : err);
+    });
   }
 }

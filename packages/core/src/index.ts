@@ -30,3 +30,4 @@ export * from "./leaderboard-types";
 export * from "./agents/kol-discovery-agent";
 export * from "./agents/kol-prefilter-agent";
 export * from "./agents/kol-ranking-agent";
+export * from "./llm-client";

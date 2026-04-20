@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MiniSparkline, TokenDetailChart } from "./watchroom-charts";
+import { Nav } from "../components/nav";
 
 type WatchToken = {
   id: string;
@@ -279,22 +280,7 @@ export function WatchroomClient() {
 
   return (
     <main className="terminal-shell">
-      <header className="terminal-topbar">
-        <div className="terminal-brand">
-          <img className="brand-logo" src="/assets/memerecall-logo.svg" alt="MemeRecall" />
-          <span className="brand-name">监控室</span>
-        </div>
-        <nav className="terminal-nav">
-          <span className="nav-item active">选</span>
-          <span className="nav-item active">看</span>
-          <span className="nav-item active">删</span>
-        </nav>
-        <div className="terminal-search">小白模式：粘贴合约地址即可</div>
-        <div className="terminal-actions">
-          <span className="status-dot" />
-          <span>30min sync · 20% alert</span>
-        </div>
-      </header>
+      <Nav />
 
       <section className="watchroom-layout">
         <Card className="terminal-panel watchroom-control-panel">

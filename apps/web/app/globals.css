@@ -1670,3 +1670,230 @@ input {
   display: flex;
   gap: 6px;
 }
+
+/* ================================================================
+   ANALYSIS DETAIL PAGE — missing classes
+   ================================================================ */
+
+.hero-grid {
+  grid-template-columns: 340px minmax(0, 1fr) 320px;
+  width: calc(100% - 48px);
+  margin: 18px 24px 0;
+}
+
+@media (max-width: 1100px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.insight-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  counter-reset: insight;
+}
+
+.insight-list li {
+  counter-increment: insight;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-soft);
+  color: var(--muted-2);
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.insight-list li::before {
+  content: counter(insight) ".";
+  color: var(--green);
+  font-weight: 800;
+  margin-right: 8px;
+}
+
+.signal-funnel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--panel-2);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted-2);
+  flex-wrap: wrap;
+}
+
+.signal-funnel .funnel-arrow {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---- Red flags ---- */
+
+.red-flags-row {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 102, 135, 0.18);
+  background: rgba(255, 102, 135, 0.04);
+}
+
+.flag-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--red);
+  margin-bottom: 10px;
+}
+
+.flag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.flag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.flag-high {
+  color: var(--red);
+  border: 1px solid rgba(255, 102, 135, 0.34);
+  background: rgba(255, 102, 135, 0.08);
+}
+
+.flag-medium {
+  color: var(--amber);
+  border: 1px solid rgba(255, 212, 90, 0.32);
+  background: rgba(255, 212, 90, 0.06);
+}
+
+.flag-low {
+  color: var(--muted-2);
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.flag-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flag-detail {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.flag-detail.flag-high {
+  border-color: rgba(255, 102, 135, 0.24);
+  background: rgba(255, 102, 135, 0.04);
+}
+
+.flag-detail.flag-medium {
+  border-color: rgba(255, 212, 90, 0.2);
+  background: rgba(255, 212, 90, 0.03);
+}
+
+.flag-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.flag-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.flag-dot-high {
+  background: var(--red);
+  box-shadow: 0 0 8px rgba(255, 102, 135, 0.4);
+}
+
+.flag-dot-medium {
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(255, 212, 90, 0.3);
+}
+
+.flag-dot-low {
+  background: var(--muted);
+}
+
+.flag-description {
+  color: var(--muted-2);
+  line-height: 1.55;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ---- Score color classes (standalone) ---- */
+
+.score-green { color: var(--green); }
+.score-yellow { color: var(--amber); }
+.score-orange { color: #f59e42; }
+.score-red { color: var(--red); }
+
+/* ---- Misc analysis page ---- */
+
+.action-badge {
+  display: inline-flex;
+  margin-top: 12px;
+  font-size: 14px;
+  padding: 6px 16px;
+}
+
+.sub-heading {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: var(--muted-2);
+}
+
+.token-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  margin: 2px 4px 2px 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--panel-3);
+  border: 1px solid var(--line-soft);
+  color: var(--text);
+}
+
+.wide-tooltip {
+  max-width: 520px !important;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+.insights-panel {
+  min-height: 320px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: translateX(-60%); }
+  50% { opacity: 1; transform: translateX(160%); }
+}

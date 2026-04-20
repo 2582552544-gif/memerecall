@@ -4,28 +4,8 @@
  * Generates 3 top insights + thesis in Chinese based on structured analysis data.
  */
 
-import OpenAI from "openai";
 import type { KOLScores, RedFlag, SignalStats, ChainCoverage } from "../kol-report-types";
-
-function createLLMClient(): OpenAI {
-  const baseURL = process.env.MEMERECALL_LLM_BASE_URL || "https://yunwu.ai/v1";
-  const apiKey =
-    process.env.MEMERECALL_LLM_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    "";
-
-  if (!apiKey) {
-    throw new Error(
-      "LLM API key required. Set MEMERECALL_LLM_API_KEY or OPENAI_API_KEY env var.",
-    );
-  }
-
-  return new OpenAI({ baseURL, apiKey });
-}
-
-function getModel(): string {
-  return process.env.MEMERECALL_LLM_MODEL || "gpt-4o";
-}
+import { getLLMClient, getLLMModel } from "../llm-client";
 
 interface NarrativeInput {
   handle: string;
@@ -47,8 +27,8 @@ export interface NarrativeOutput {
 export async function generateNarrative(
   input: NarrativeInput,
 ): Promise<NarrativeOutput> {
-  const client = createLLMClient();
-  const model = getModel();
+  const client = getLLMClient();
+  const model = getLLMModel();
 
   const prompt = `你是加密 KOL 分析师。基于以下结构化数据，生成中文分析报告。
 
