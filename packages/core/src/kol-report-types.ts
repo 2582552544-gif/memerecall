@@ -1,4 +1,5 @@
 import type { SocialInvestmentPick, WalletOnlyInvestmentTrade } from "./social-investment-types";
+import type { EvidenceRow, FollowerSimResult, PnlBreakdownSummary } from "./evidence-types";
 
 // --- Action Tiers (5 档替代二元 verdict) ---
 
@@ -106,4 +107,9 @@ export interface KOLReport {
   picks: SocialInvestmentPick[];
   walletOnlyTrades: WalletOnlyInvestmentTrade[];
   walletSummaries: WalletSummary[];
+
+  // Evidence-first analysis (v2.1)
+  evidences?: EvidenceRow[];
+  followerSim?: FollowerSimResult;
+  pnlBreakdown?: PnlBreakdownSummary;
 }

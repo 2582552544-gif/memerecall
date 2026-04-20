@@ -31,3 +31,5 @@ export * from "./agents/kol-discovery-agent";
 export * from "./agents/kol-prefilter-agent";
 export * from "./agents/kol-ranking-agent";
 export * from "./llm-client";
+export * from "./evidence-types";
+export * from "./agents/evidence-builder";

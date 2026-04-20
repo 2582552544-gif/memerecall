@@ -23,11 +23,15 @@ import type {
   WalletSummary,
 } from "../kol-report-types";
 
+import { buildEvidenceRows, computeFollowerSim, computePnlBreakdown } from "./evidence-builder";
+import type { EvidenceRow, FollowerSimResult, PnlBreakdownSummary } from "../evidence-types";
 import { collectSocialSignalsForHandle } from "./gmgn-social-agent";
 import { analyzeKolMultiWallet, type MultiWalletReport } from "./kol-analysis-agent";
 import { collectMultiChainActivityRows } from "./gmgn-activity-agent";
 import { classifySignals } from "./signal-classifier-agent";
 import { generateNarrative } from "./narrative-agent";
+import { getMemeRecallConfig } from "../config";
+import { saveKolReport } from "../persist";
 
 const AGENT_VERSION = "2.0.0";
 
@@ -550,6 +554,26 @@ export async function analyzeKolFull(
     topTradesSummary,
   });
 
+  // Step 6b: Evidence-first data
+  let evidences: EvidenceRow[] = [];
+  let followerSim: FollowerSimResult | undefined;
+  let pnlBreakdown: PnlBreakdownSummary | undefined;
+
+  try {
+    evidences = await buildEvidenceRows(classified, activities, picks);
+    followerSim = computeFollowerSim(evidences);
+    pnlBreakdown = computePnlBreakdown(
+      walletReport.allTradeDecisions,
+      classified,
+    );
+    console.log(
+      `[kol-full] Evidence: ${evidences.length} rows, ` +
+      `sim=${followerSim.roiPct}% ROI, alignment=${pnlBreakdown.alignmentPct}%`,
+    );
+  } catch (err) {
+    console.error(`[kol-full] Evidence building failed:`, err instanceof Error ? err.message : err);
+  }
+
   // Step 7: Build wallet summaries
   const walletSummaries: WalletSummary[] = walletReport.wallets.map((w) => ({
     address: w.address,
@@ -565,7 +589,7 @@ export async function analyzeKolFull(
     `flags=[${redFlags.join(",")}], matched=${matchedCount}/${picks.length}`,
   );
 
-  return {
+  const report: KOLReport = {
     generatedAt: new Date().toISOString(),
     agentVersion: AGENT_VERSION,
     kol: {
@@ -584,7 +608,21 @@ export async function analyzeKolFull(
     picks,
     walletOnlyTrades,
     walletSummaries,
+    evidences,
+    followerSim,
+    pnlBreakdown,
   };
+
+  // Auto-persist report to disk
+  try {
+    const config = getMemeRecallConfig();
+    const savedPath = await saveKolReport(config.reportsDir, subject.handle, report);
+    console.log(`[kol-full] Report saved to ${savedPath}`);
+  } catch (err) {
+    console.error(`[kol-full] Failed to save report:`, err instanceof Error ? err.message : err);
+  }
+
+  return report;
 }
 
 // ============================================================

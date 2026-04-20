@@ -14,6 +14,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Nav } from "../../components/nav";
+import { EvidenceList } from "../../components/evidence-chain";
+import { FollowerSimulator } from "../../components/follower-simulator";
+import { WalletPnlBreakdown } from "../../components/pnl-breakdown";
 
 // ---- Helpers ----
 
@@ -303,6 +306,9 @@ export default async function AnalysisPage({
             <TabsTrigger value="wallets">Wallets ({report.walletSummaries.length})</TabsTrigger>
             <TabsTrigger value="signals">Signals ({report.classifiedSignals.length})</TabsTrigger>
             <TabsTrigger value="flags">Red Flags ({report.redFlags.length})</TabsTrigger>
+            {report.evidences && report.evidences.length > 0 && (
+              <TabsTrigger value="evidence">Evidence ({report.evidences.length})</TabsTrigger>
+            )}
           </TabsList>
 
           {/* Tab: Picks */}
@@ -538,6 +544,26 @@ export default async function AnalysisPage({
               )}
             </CardContent>
           </TabsContent>
+
+          {/* Tab: Evidence Chain */}
+          {report.evidences && report.evidences.length > 0 && (
+            <TabsContent value="evidence">
+              <CardContent>
+                {/* Simulator + Breakdown side by side */}
+                {(report.followerSim || report.pnlBreakdown) && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                    {report.followerSim && (
+                      <FollowerSimulator handle={report.kol.handle} sim={report.followerSim} />
+                    )}
+                    {report.pnlBreakdown && (
+                      <WalletPnlBreakdown breakdown={report.pnlBreakdown} />
+                    )}
+                  </div>
+                )}
+                <EvidenceList evidences={report.evidences} />
+              </CardContent>
+            </TabsContent>
+          )}
         </Tabs>
       </Card>
 

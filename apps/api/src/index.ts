@@ -8,6 +8,7 @@ import {
   discoveredToSubjects,
   batchPrefilter,
   batchAnalyzeKols,
+  lookupKolByHandle,
   buildLeaderboard,
   buildTimelineAnalysis,
   dashboardData,
@@ -192,6 +193,69 @@ const app = new Elysia()
       return { error: "Tracked subject not found", handle: params.handle };
     }
     return analyzeKolFull(subject);
+  })
+  .post("/analyze", async ({ body, set }) => {
+    const { handle, walletAddress, chain } = body as {
+      handle?: string;
+      walletAddress?: string;
+      chain?: string;
+    };
+
+    const cleanHandle = (handle || "").replace(/^@/, "").trim();
+    const cleanChain = (chain || "sol").trim();
+    let cleanWallet = (walletAddress || "").trim();
+
+    if (!cleanHandle) {
+      set.status = 400;
+      return { error: "handle is required" };
+    }
+
+    // Auto-lookup wallet from GMGN if not provided
+    if (!cleanWallet) {
+      const discovered = await lookupKolByHandle(cleanHandle, cleanChain);
+      if (!discovered) {
+        set.status = 404;
+        return {
+          error: `Wallet not found for @${cleanHandle} on GMGN. Please provide walletAddress manually.`,
+        };
+      }
+      cleanWallet = discovered.walletAddress;
+    }
+
+    const subject = {
+      handle: cleanHandle,
+      wallets: [
+        {
+          address: cleanWallet,
+          chain: cleanChain,
+          label: "user-submitted",
+          confirmation: "confirmed" as const,
+        },
+      ],
+      label: cleanHandle,
+      walletAddress: cleanWallet,
+      chain: cleanChain,
+    };
+
+    try {
+      const report = await analyzeKolFull(subject);
+      return report;
+    } catch (error) {
+      set.status = 500;
+      return {
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  })
+  .get("/lookup/:handle", async ({ params, query, set }) => {
+    const cleanHandle = params.handle.replace(/^@/, "").trim();
+    const chain = String(query.chain || "sol").trim();
+    const discovered = await lookupKolByHandle(cleanHandle, chain);
+    if (!discovered) {
+      set.status = 404;
+      return { error: `@${cleanHandle} not found on GMGN`, handle: cleanHandle };
+    }
+    return discovered;
   })
   .get("/analysis/refresh", async () => runMemeRecallAnalysisCycle())
   .get("/trust/:handle", ({ params, set }) => {

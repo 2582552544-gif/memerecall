@@ -92,6 +92,77 @@ export async function discoverKOLs(
 /** @deprecated Use discoverKOLs instead */
 export const discoverRenownedKOLs = discoverKOLs;
 
+/**
+ * Lookup a single KOL by twitter handle.
+ * Strategy: GMGN ranking API (kol → smart_money) → gmgn-cli track kol fallback.
+ */
+export async function lookupKolByHandle(
+  handle: string,
+  chain = "sol",
+): Promise<DiscoveredKOL | null> {
+  const normalized = handle.replace(/^@/, "").trim().toLowerCase();
+  if (!normalized) return null;
+
+  // 1. GMGN KOL ranking (top 200)
+  console.log(`[discovery] Looking up @${normalized} in GMGN KOL ranking...`);
+  try {
+    const kols = await discoverKOLs(chain, 200, "kol", "pnl_7d");
+    const match = kols.find((k) => k.handle.toLowerCase() === normalized);
+    if (match) {
+      console.log(`[discovery] Found @${normalized}: wallet=${match.walletAddress}`);
+      return match;
+    }
+  } catch (err) {
+    console.error(`[discovery] KOL ranking lookup failed:`, err instanceof Error ? err.message : err);
+  }
+
+  // 2. GMGN smart_money ranking (top 200)
+  console.log(`[discovery] Trying smart_money ranking...`);
+  try {
+    const smartMoney = await discoverKOLs(chain, 200, "smart_money", "pnl_7d");
+    const smMatch = smartMoney.find((k) => k.handle.toLowerCase() === normalized);
+    if (smMatch) {
+      console.log(`[discovery] Found @${normalized} in smart_money: wallet=${smMatch.walletAddress}`);
+      return smMatch;
+    }
+  } catch (err) {
+    console.error(`[discovery] smart_money ranking lookup failed:`, err instanceof Error ? err.message : err);
+  }
+
+  // 3. gmgn-cli track kol — recent KOL trades have twitter_username + wallet
+  console.log(`[discovery] Trying gmgn-cli track kol...`);
+  try {
+    const raw = await runBb(["gmgn-cli", "track", "kol", "--chain", chain, "--limit", "200", "--raw"]);
+    const data = JSON.parse(raw) as { list?: { maker: string; maker_info?: { twitter_username?: string; twitter_name?: string } }[] };
+    if (data.list) {
+      const found = data.list.find(
+        (item) => item.maker_info?.twitter_username?.toLowerCase() === normalized,
+      );
+      if (found) {
+        console.log(`[discovery] Found @${normalized} via gmgn-cli: wallet=${found.maker}`);
+        return {
+          handle: found.maker_info!.twitter_username!,
+          walletAddress: found.maker,
+          chain,
+          name: found.maker_info?.twitter_name || normalized,
+          followers: 0,
+          realizedProfit7d: 0,
+          winrate7d: 0,
+          buy7d: 0,
+          sell7d: 0,
+          volume7d: 0,
+          tags: ["kol"],
+        };
+      }
+    }
+  } catch (err) {
+    console.error(`[discovery] gmgn-cli fallback failed:`, err instanceof Error ? err.message : err);
+  }
+
+  console.log(`[discovery] @${normalized} not found in any GMGN source`);
+  return null;
+}
+
 export function discoveredToSubjects(kols: DiscoveredKOL[]): AgentSubject[] {
   return kols.map((kol) => ({
     handle: kol.handle,
