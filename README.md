@@ -209,6 +209,15 @@ bun run dev
 | `TELEGRAM_BOT_TOKEN` | No | Telegram bot for price alerts |
 | `TELEGRAM_HOME_CHANNEL` | No | Telegram chat ID |
 
+## Documentation
+
+| Doc | Content |
+|-----|---------|
+| **[Architecture Overview](docs/architecture.md)** | System design, pipeline flowchart, design philosophy, tech stack |
+| **[Pipeline Deep Dive](docs/pipeline.md)** | 12-stage breakdown with inputs, outputs, Mermaid diagrams |
+| **[Tech Decisions](docs/tech-decisions.md)** | Technology choices with alternatives and trade-off analysis |
+| **[Pain Points & Future Work](docs/pain-points.md)** | Known limitations, failure modes, and roadmap |
+
 ## Key Learnings
 
 1. **GMGN KOL wallets are 94% Silent Whales** — profitable on-chain but don't tweet signals. Only 6% are actual Signal Callers. Data source matters more than algorithm quality.
