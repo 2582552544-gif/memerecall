@@ -1,0 +1,21 @@
+{
+  "name": "@memerecall/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json",
+    "lint": "echo 'lint not configured'",
+    "test": "echo 'test not configured'"
+  },
+  "dependencies": {
+    "@memerecall/core": "workspace:*",
+    "@elysiajs/cors": "^1.4.1",
+    "elysia": "^1.4.21"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.9.3"
+  }
+}

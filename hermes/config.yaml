@@ -1,0 +1,31 @@
+model:
+  provider: "auto"
+  default: "anthropic/claude-opus-4.6"
+
+terminal:
+  backend: "local"
+  cwd: "/Users/mac/PycharmProjects/ai_music_2025/memerecall"
+  timeout: 240
+  lifetime_seconds: 900
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 4000
+
+skills:
+  external_dirs:
+    - "/Users/mac/PycharmProjects/ai_music_2025/memerecall/hermes/skills"
+    - "/Users/mac/.agents/skills"
+    - "/Users/mac/.codex/skills"
+
+toolsets:
+  cli: [terminal, file, web, skills, todo, cronjob]
+  telegram: [terminal, file, web, skills, todo, cronjob, send_message]
+
+display:
+  tool_progress: "concise"
+
+gateway:
+  gateway_timeout: 1800
+  gateway_timeout_warning: 900

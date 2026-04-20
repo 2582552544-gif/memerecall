@@ -1,0 +1,23 @@
+<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="320" rx="42" fill="#090A0D"/>
+  <g filter="url(#blur)">
+    <circle cx="112" cy="110" r="82" fill="#16EAD9" fill-opacity=".25"/>
+    <circle cx="210" cy="180" r="96" fill="#7EE6A1" fill-opacity=".18"/>
+    <circle cx="175" cy="115" r="54" fill="#FF6687" fill-opacity=".24"/>
+  </g>
+  <path d="M76 209C94 142 126 108 171 111C218 114 247 158 254 239" stroke="url(#g)" stroke-width="24" stroke-linecap="round"/>
+  <path d="M101 229C119 181 146 160 179 172C209 183 224 210 229 250" stroke="#FFD45A" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="91" cy="78" r="10" fill="#7EE6A1"/>
+  <circle cx="239" cy="69" r="8" fill="#16EAD9"/>
+  <circle cx="70" cy="255" r="7" fill="#FF6687"/>
+  <defs>
+    <filter id="blur" x="-40" y="-40" width="400" height="400" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+    <linearGradient id="g" x1="76" y1="109" x2="257" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B9FF6C"/>
+      <stop offset=".5" stop-color="#16EAD9"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg>
