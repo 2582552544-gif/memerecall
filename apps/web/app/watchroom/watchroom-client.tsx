@@ -182,20 +182,27 @@ export function WatchroomClient() {
     if (bootstrapped) return;
     setBootstrapped(true);
     void (async () => {
+      // Load cached tokens immediately (fast)
+      await loadTokens();
+      // Then try to sync prices in background (slow, may timeout)
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
         const response = await fetch(`${API}/watch/run`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ dryRun: true }),
+          signal: controller.signal,
         });
+        clearTimeout(timeout);
         const data = await response.json() as { checked?: number };
         if ((data.checked || 0) > 0) {
           setMessage(`Synced latest prices. Checked ${data.checked || 0} tokens.`);
+          await loadTokens(); // Refresh with updated prices
         }
       } catch {
-        setMessage("Auto-sync failed. Showing local cache.");
+        setMessage("Showing cached data. Live sync unavailable.");
       }
-      await loadTokens();
     })();
   }, [API, bootstrapped]);
 
