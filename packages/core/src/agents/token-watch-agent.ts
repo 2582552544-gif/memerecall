@@ -169,6 +169,40 @@ function latestSnapshotForToken(
 }
 
 export async function listWatchlistTokensWithSignals(): Promise<WatchlistToken[]> {
+  // Fast path: return cached data only (no live GMGN calls).
+  // Chart data is fetched on-demand via /watch/chart endpoint.
+  const [tokens, snapshots] = await Promise.all([
+    listWatchlistTokens(),
+    readSnapshots(),
+  ]);
+
+  return tokens.map((token) => {
+    const snapshot = latestSnapshotForToken(token, snapshots);
+    const signal = aggregateWatchSignal({
+      token: {
+        ...token,
+        symbol: token.symbol || snapshot?.symbol,
+        name: token.name || snapshot?.name,
+      },
+      snapshot,
+      chart: null,
+    });
+
+    return {
+      ...token,
+      symbol: token.symbol || snapshot?.symbol,
+      name: token.name || snapshot?.name,
+      lastSnapshotAt: snapshot?.capturedAt || token.lastSnapshotAt,
+      lastSnapshotPrice: snapshot?.priceUsd || token.lastSnapshotPrice,
+      signalScore: signal.signalScore,
+      signalLabel: signal.signalLabel,
+      factorBreakdown: signal.factorBreakdown,
+    };
+  });
+}
+
+export async function listWatchlistTokensWithSignalsLive(): Promise<WatchlistToken[]> {
+  // Full path: fetches live chart data from GMGN (slow, uses bb-browser).
   const [tokens, snapshots] = await Promise.all([
     listWatchlistTokens(),
     readSnapshots(),
